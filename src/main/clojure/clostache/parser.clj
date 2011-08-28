@@ -36,23 +36,23 @@
   [template]
   (replace-all template [["\\{\\{\\![^\\}]*\\}\\}" ""]]))
 
+(defn- section-start [template]
+  (first (sort (filter #(not (neg? %)) (map #(.indexOf template %) ["{{#" "{{^"])))))
+
 (defn- extract-section
   "Extracts the outer section from the template."
   [template]
-  (let [start (.indexOf template "{{#")
-        start-inverted (.indexOf template "{{^")
-        end-tag (.indexOf template "{{/" start)
-        end (+ (.indexOf template "}}" end-tag) 2)]
-    (if (or (and (= start -1) (= start-inverted -1))
-            (= end 1))
-      nil
-      (let [inverted (= start -1)
-            start (if inverted start-inverted start)
-            section (.substring template start end)
-            body-start (+ (.indexOf section "}}") 2)
-            body-end (.lastIndexOf section "{{")
-            body (.substring section body-start body-end)
-            section-name (.trim (.substring section 3 (- body-start 2)))]
+  (let [start (section-start template)]
+    (when start
+      (let [body-start (+ (.indexOf template "}}" start) 2)
+            section-name (.trim (subs template (+ start 3) (- body-start 2)))
+            end-tag-pattern (re-pattern (str "\\{\\{\\/\\s*" section-name "\\s*\\}\\}"))
+            end-tag-matcher (re-matcher end-tag-pattern template)
+            body-end (and (.find end-tag-matcher body-start) (.start end-tag-matcher))
+            end (+ body-end (.length (.group end-tag-matcher)))
+            body (subs template body-start body-end)
+            start-token (subs template start (+ start 3))
+            inverted (= start-token "{{^")]
         (Section. section-name body start end inverted)))))
 
 (defn render

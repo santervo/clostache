@@ -30,6 +30,10 @@
                       "Hello{{#names}}, {{name}}{{/names}}!")
                  {:names [{:name "Felix"} {:name "Jenny"}]}))))
 
+(deftest test-render-nested-context
+  (is (= "A's children, B, C" (render "{{#parents}}{{name}}'s children{{#children}}, {{name}}{{/children}}{{/parents}}"
+                                      {:parents [{:name "A" :children [{:name "B"} {:name "C"}]}]}))))
+
 (deftest test-render-seq
   (is (= "Hello, Felix, Jenny!" (render "Hello{{#names}}, {{name}}{{/names}}!"
                                         {:names (seq [{:name "Felix"}
@@ -72,3 +76,7 @@
 (deftest test-render-inverted-boolean-false
   (is (= "Hello, Felix" (render "Hello, {{^condition}}Felix{{/condition}}"
                                 {:condition false}))))
+
+(deftest test-render-inverted-before-normal-section
+  (is (= "Hello, Felix!" (render "Hello, {{^no}}Felix{{/no}}{{#yes}}!{{/yes}}"
+                                {:no false :yes true}))))
